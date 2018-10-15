@@ -13,13 +13,11 @@ FirebaseArduino FirebaseStream;
 #define device_id "Device 002"
 
 
-int f0=0;
 int f1=0;
 int f2=0;
 int f3=0;
 int f4=0;
-int f5=0;
-int f6=0;
+
 IPAddress local_IP(192,168,4,22);
 IPAddress gateway(192,168,4,9);
 IPAddress subnet(255,255,255,0);
@@ -70,7 +68,10 @@ Serial.println("s4");
      char uid[64];
   EEPROM.get(96,uid);
 Serial.println("s5");
-delay(500);     
+delay(500); 
+char stat[5];
+EEPROM.get(160,stat);
+    Serial.println(stat);
     
         pinMode(button,INPUT);
         pinMode(rst,INPUT);
@@ -114,9 +115,40 @@ Serial.println("7");
         FirebaseStream.stream(path);
         String test="";
         test=path+"/test";
+        char a[4]={'w','r','t','e'};
+        if((stat[0]==a[0])&&(stat[1]==a[1])&&(stat[2]==a[2])&&(stat[3]==a[3]))
+        {
+          Firebase.set(path+"/Switch 0",0);
+          Firebase.set(path+"/Switch 1",0);
+          Firebase.set(path+"/Switch 2",0);
+          Firebase.set(path+"/Switch 3",0);
+          Firebase.set(path+"/Feed 0",0);
+          Firebase.set(path+"/Feed 1",0);
+          Firebase.set(path+"/Feed 2",0);
+          Firebase.set(path+"/Feed 3",0);
+          delay(100);
+          String s="done";
+          for(int i=0;i<4;i++)
+          {
+          EEPROM.write(160+i,s[i]);
+          delay(100);
+          }
+          EEPROM.commit();
+          ESP.restart();
+        }
         
         Firebase.set(test,1);
             Serial.println("updated");
+        digitalWrite(0,Firebase.getInt(path+"/Switch 0"));
+        digitalWrite(2,Firebase.getInt(path+"/Switch 1"));
+        digitalWrite(16,Firebase.getInt(path+"/Switch 2"));
+        digitalWrite(3,Firebase.getInt(path+"/Switch 3"));
+        f1=Firebase.getInt(path+"/Feed 1");
+        f2=Firebase.getInt(path+"/Feed 2");
+        f3=Firebase.getInt(path+"/Feed 3");
+        f4=Firebase.getInt(path+"/Feed 4");
+      
+        
        
  
 Serial.println("8");
@@ -258,9 +290,11 @@ Serial.println("19");
         Serial.println("21");
         if (qsid.length() > 0 && qpass.length() > 0) {
           Serial.println("clearing eeprom");
-          for (int i = 0; i < 96; ++i) { delay(100);EEPROM.write(i, 0); }
-          if(digitalRead(rst)==1)
+          for (int i =0; i < 96; ++i) { delay(100);EEPROM.write(i, 0); }
+          if(digitalRead(rst)==1){
           for(int i=96;i<160;i++){delay(100);EEPROM.write(i,0);}
+          for(int i=160;i<164;i++){delay(100);EEPROM.write(i,0);}
+          }
           Serial.println(qsid);
           Serial.println("");
           Serial.println(qpass);
@@ -296,12 +330,19 @@ Serial.println("24");
               Serial.print("Wrote: ");
               Serial.println(uid[i]); 
             }    
+              delay(100);
+               String s="wrte";
+          for(int i=0;i<4;i++)
+          {
+          EEPROM.write(160+i,s[i]);
+          delay(100);
+          }
             }
              
 Serial.println("25");
      
           EEPROM.commit();
-          content = "{\"Success\":\"saved to eeprom... reset to boot into new wifi\"}";
+          content = "{\"Success\":\"....YOU CAN RESTART THE DEVICE NOW....\"}";
           statusCode = 200;
         }
         else {
@@ -315,8 +356,79 @@ Serial.println("25");
   
 }
 }
+void get_switch_details(String Switch,int val)
+{
 
+  
+  if(Switch=="/Switch 1")
+  {
+    if(val==1)
+    {
+      Serial.println("0 is high");
+      digitalWrite(0,HIGH);
+    }
+    else if(val==0)
+    {
+      Serial.println("0 is LOW");
+      digitalWrite(0,LOW);
+    }
+  }
+
+
+  
+  if(Switch=="/Switch 2")
+  {
+    if(val==1)
+    {
+      Serial.println("2 is high");
+      digitalWrite(2,HIGH);
+    }
+    else if(val==0)
+    {
+      Serial.println("2 is LOW");
+      digitalWrite(2,LOW);
+    }
+  }
+
+
+
+  
+  if(Switch=="/Switch 3")
+  {
+    if(val==1)
+    {
+      Serial.println("16 is high");
+      digitalWrite(16,HIGH);
+    }
+    else if(val==0)
+    {
+      Serial.println("16 is LOW");
+      digitalWrite(16,LOW);
+    }
+  }
+
+
+
+  
+  if(Switch=="/Switch 4")
+  {
+    if(val==1)
+    {
+      Serial.println("3 is high");
+      digitalWrite(3,HIGH);
+    }
+    else if(val==0)
+    {
+      Serial.println("3 is LOW");
+      digitalWrite(3,LOW);
+    }
+  }
+
+
+  
+}
 void loop(){
+
   Serial.println("26");
   if(digitalRead(button)==0)
   { 
@@ -325,6 +437,7 @@ void loop(){
     while(WiFi.status()==WL_CONNECTED)
   
   {
+  
      if (FirebaseStream.available()) {
     FirebaseObject event = FirebaseStream.readEvent();
     Serial.print("event: ");
@@ -335,133 +448,36 @@ void loop(){
     Serial.print("data: ");
     val=event.getInt("data");
     Serial.println(event.getInt("data"));
-    switch Switch:
-    case "Switch 1":
+    get_switch_details(Switch,val);
+    
     
   }
-  }
-Serial.println("27");
-     
-  while(WiFi.status()==WL_CONNECTED)
-  {
-  /*int a0=Firebase.getInt("fan0");
-  if(Firebase.failed())
-  break;
-  int a2=Firebase.getInt("fan2");
-  if(Firebase.failed())
-  break;
-  */
+    if(f1!=digitalRead(15))
+    {
+ 
+      Firebase.setInt(path+"/Feed 1",digitalRead(15));
+      f1=digitalRead(15);
+    }
+    if(f2!=digitalRead(5))
+    {
+      Firebase.setInt(path+"/Feed 2",digitalRead(5));
+      f2=digitalRead(5);
+    }
+    if(f3!=digitalRead(12))
+    {
    
-Serial.println("28");
-     
-  int a4=Firebase.getInt("Switch 1");
-  if(Firebase.failed())
-  break;
-   
-Serial.println("29");
-     
-  int a5=Firebase.getInt("Switch 2");
-  if(Firebase.failed())
-  break;
-   
-Serial.println("30");
-     
-  int a6=Firebase.getInt("Switch 3");
-  if(Firebase.failed())
-  break;
-   
-Serial.println("31");
-     
-  int a7=Firebase.getInt("Switch 4");
-  if(Firebase.failed())
-  break;
-   
-Serial.println("32");
-     
-  
-  /*if(a0==1)
-  {
-  digitalWrite(0,LOW);
-  }
-  else if(a0==0)
-  {
-  digitalWrite(0,HIGH);
-  }
-  if(a2==1)
-  {
-  digitalWrite(2,LOW);
-  }
-  else if(a2==0)
-  {
-  digitalWrite(2,HIGH);
+      Firebase.setInt(path+"/Feed 3",digitalRead(12));
+      f3=digitalRead(12);
+    }
+    if(f4!=digitalRead(2))
+    {
+      Firebase.setInt(path+"/Feed 4",digitalRead(2));
+      f4=digitalRead(2);
+    }
   }
 
-  
-  if(a4==1)
-  {
-  digitalWrite(4,LOW);
-  }
-  else if(a4==0)
-  {
-  digitalWrite(4,HIGH);
-  }
-  */
-  if(a5==1)
-  {
-  digitalWrite(5,LOW);
-  Serial.println("LOW");
-  }
-  else if(a5==0)
-  {
-  digitalWrite(5,HIGH);
-  Serial.println("HIGH");
-  }
-  if(a6==1)
-  {
-  digitalWrite(6,LOW);
-  }
-  else if(a6==0)
-  {
-  digitalWrite(6,HIGH);
-  }
-  if(a7==1)
-  {
-  digitalWrite(7,LOW);
-  
-  }
-  else if(a7==0)
-  {
-  digitalWrite(7,HIGH);
-  }
-  
-  
-  
-  if(digitalRead(8)!=f0)
-  {
-  Firebase.setInt("feed0",!(digitalRead(8)));
-  f0=digitalRead(8);
-  }
-  if(digitalRead(9)!=f1)
-  {
-  Firebase.setInt("feed1",!(digitalRead(9)));
-  f1=digitalRead(9);
-  }
-  if(digitalRead(11)!=f3)
-  {
-  Firebase.setInt("feed3",!(digitalRead(11)));
-  f3=digitalRead(11);
-  }
-  if(digitalRead(12)!=f4)
-  {
-  Firebase.setInt("feed4",!(digitalRead(12)));
-  f4=digitalRead(12);
-  }
-  if(digitalRead(15)!=f5)
-  {
-  Firebase.setInt("feed5",!(digitalRead(15)));
-  f5=digitalRead(15);
-  }
-  }
+    if(WiFi.status()!=WL_CONNECTED)
+    ESP.restart();
   }
  else if(digitalRead(button)==HIGH)
  {
