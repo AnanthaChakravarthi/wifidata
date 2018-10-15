@@ -4,6 +4,8 @@
 #include <EEPROM.h>
 ESP8266WebServer server(80);
 
+FirebaseArduino FirebaseStream;
+
 #define FIREBASE_AUTH "9eQbDkxJ6wbPAZpi5us5S3XnsgbLluwMywA5HvEo"
 #define button 14// button for wifi settings
 #define rst 13//button for uid
@@ -27,6 +29,7 @@ const char* ssid = "Myhome1237";
 const char* passphrase = "Myhome1237";
 String content;
 String st;
+String path="";
 String FIREBASE_HOST="mobile-control-home.firebaseio.com";
 int statusCode;
 
@@ -34,19 +37,19 @@ void setup() {
 
 Serial.begin(115200);
 Serial.println("1");
- //pinMode(0,OUTPUT);
+        pinMode(0,OUTPUT);
         Serial.println("updated1");
         pinMode(2,OUTPUT);
         Serial.println("updated2");
         pinMode(16,OUTPUT);
         Serial.println("updated3");
-        pinMode(12,OUTPUT);
+        pinMode(3,OUTPUT);
         Serial.println("updated4");
         pinMode(15,INPUT);
         Serial.println("updated5");
         pinMode(5,INPUT);
         Serial.println("updated6");
-        //pinMode(1,INPUT);
+        pinMode(12,INPUT);
         Serial.println("updated7");
         pinMode(2,INPUT);
         Serial.println("updated8");
@@ -100,14 +103,19 @@ Serial.println("6");
          
 Serial.println("7");
      
-        FIREBASE_HOST=FIREBASE_HOST+"/ers/"+uid+"/"+device_id;
+        //FIREBASE_HOST=FIREBASE_HOST+"/ers/"+uid+"/"+device_id;
         Serial.println(FIREBASE_HOST);
         Serial.println("hi");
         Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+        FirebaseStream.begin(FIREBASE_HOST, FIREBASE_AUTH);
         Serial.println("hrllo");
+        
+        path=path+"/users/"+uid+"/"+device_id;
+        FirebaseStream.stream(path);
         String test="";
-        //test=test+"/users/"+uid+"/"+device_id+"/test";
-        Firebase.set("test",1);
+        test=path+"/test";
+        
+        Firebase.set(test,1);
             Serial.println("updated");
        
  
@@ -311,8 +319,27 @@ Serial.println("25");
 void loop(){
   Serial.println("26");
   if(digitalRead(button)==0)
+  { 
+    String Switch="";
+    int val;
+    while(WiFi.status()==WL_CONNECTED)
+  
   {
-     
+     if (FirebaseStream.available()) {
+    FirebaseObject event = FirebaseStream.readEvent();
+    Serial.print("event: ");
+    Serial.println(event.getString("event"));
+    Serial.print("path: ");
+    Switch=event.getString("path");
+    Serial.println(event.getString("path"));
+    Serial.print("data: ");
+    val=event.getInt("data");
+    Serial.println(event.getInt("data"));
+    switch Switch:
+    case "Switch 1":
+    
+  }
+  }
 Serial.println("27");
      
   while(WiFi.status()==WL_CONNECTED)
@@ -445,6 +472,3 @@ Serial.println("33");
     Serial.println("34");
  }
   }
-
-
-
