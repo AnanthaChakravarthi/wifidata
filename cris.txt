@@ -1,0 +1,9 @@
+13.233.46.110
+
+https://www.wikihow.com/Open-Ports-in-Linux-Server-Firewall 
+
+
+https://www.tecmint.com/install-apache-tomcat-in-centos/ 
+
+
+https://www.ibm.com/support/knowledgecenter/en/SSEPGG_10.1.0/com.ibm.db2.luw.qb.server.doc/doc/t0008875.html
